@@ -14,7 +14,7 @@ It provides:
 
 ---
 
-![ezgif-32d3e4fde97075fe](https://github.com/user-attachments/assets/98850e68-cae5-465f-a4fd-8707f7788476)
+https://github.com/user-attachments/assets/08edc1b4-44d6-4ade-8e9f-bf906564b9d6
 
 # 📦 Installation
 ### You can install it from the Chrome Web Store by following these simple steps:
