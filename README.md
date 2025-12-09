@@ -120,11 +120,7 @@ The extension extracts the hostname automatically.
 
 ## 🤝 Contributing
 
-- Issues and PRs welcome  
-- Describe bugs clearly  
-- Use small, clean commits  
-- Avoid committing secrets or tokens
-
+- Issues and PRs welcome
 ---
 
 - Provided for educational and legitimate security research  
