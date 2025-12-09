@@ -16,13 +16,6 @@ It provides:
 
 https://github.com/user-attachments/assets/08edc1b4-44d6-4ade-8e9f-bf906564b9d6
 
-# 📦 Installation
-### You can install it from the Chrome by following these simple steps:
-
-1️⃣ Go to **Extensions**  
-2️⃣ Click **Manage Extensions**  
-3️⃣ Click **Load unpacked**
-
 ---
 
 ## ⭐ Key Features
