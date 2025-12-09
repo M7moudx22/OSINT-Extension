@@ -3,9 +3,13 @@
 **OSINT Extension** is a compact Google Chrome extension that helps security researchers and investigators quickly open a collection of OSINT tools and targeted searches for a given domain or hostname.
 
 It provides:  
+
 ✔️ Popup GUI
+
 ✔️ Context menu integration
+
 ✔️ Automated **AlienVault OTX job runner**
+
 ✔️ Background tab automation with pause/resume controls
 
 ---
