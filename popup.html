@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>OSINT Extension</title>
+    <style>
+      :root {
+        --accent: #6366f1;
+        --btn: #4f46e5;
+        --muted: #8b94a5;
+      }
+      body {
+        width: 650px;
+        margin: 0;
+        padding: 12px;
+        background: #0a0f1c;
+        color: #e6eef8;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 13px;
+      }
+      .top {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .app-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--accent), #7c3aed);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: white;
+        font-size: 16px;
+      }
+      .title {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      #urlInput {
+        width: 100%;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: #0b1220;
+        color: #e6eef8;
+        margin-top: 8px;
+        box-sizing: border-box;
+      }
+      .section {
+        background: rgba(255, 255, 255, 0.02);
+        padding: 8px;
+        border-radius: 8px;
+        margin-top: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+      }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .section h4 {
+        margin: 0;
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .open-all-btn {
+        padding: 4px 8px;
+        border-radius: 4px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--accent);
+        font-size: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .open-all-btn:hover {
+        background: var(--accent);
+        color: white;
+      }
+      .open-all-btn:active {
+        transform: scale(0.95);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+      .btn {
+        padding: 6px 8px;
+        border-radius: 6px;
+        border: none;
+        background: var(--btn);
+        color: white;
+        font-size: 11px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .btn:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .btn svg {
+        width: 12px;
+        height: 12px;
+        opacity: 0.95;
+      }
+      .links {
+        margin-top: 8px;
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        padding-top: 8px;
+      }
+      a.link {
+        color: var(--muted);
+        font-size: 11px;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      a.link:hover {
+        color: var(--accent);
+        text-decoration: underline;
+      }
+      .dork-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 5px;
+      }
+      .dork-btn {
+        padding: 5px 6px;
+        font-size: 10px;
+      }
+      .dork-category {
+        margin-bottom: 10px;
+        background: rgba(255, 255, 255, 0.01);
+        padding: 6px;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.02);
+      }
+      .dork-category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .dork-category > strong {
+        font-size: 10px;
+        color: var(--muted);
+        display: block;
+        margin-bottom: 5px;
+      }
+      .dork-open-all-btn {
+        padding: 3px 6px;
+        border-radius: 3px;
+        border: 1px solid rgba(99, 102, 241, 0.6);
+        background: transparent;
+        color: rgba(99, 102, 241, 0.8);
+        font-size: 9px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .dork-open-all-btn:hover {
+        background: rgba(99, 102, 241, 0.2);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+      .dork-open-all-btn:active {
+        transform: scale(0.95);
+      }
+      /* add small styles for jobs list */
+      #otxJobs { margin: 8px 0; padding: 6px; border: 1px solid #ddd; border-radius: 6px; max-height: 200px; overflow:auto; }
+      .otx-job { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid #f2f2f2; }
+      .otx-job:last-child { border-bottom: none; }
+      .otx-job button { margin-left:8px; }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div class="app-icon">OS</div>
+      <div>
+        <div class="title">OSINT Extension</div>
+      </div>
+    </div>
+
+    <div>
+      <strong>Running OTX jobs</strong>
+      <div id="otxJobs"><em>No active jobs</em></div>
+    </div>
+    
+    <input id="urlInput" placeholder="Enter URL or domain" />
+
+    <!-- Search Engines -->
+    <div class="section">
+      <div class="section-header">
+        <h4>🔍 Search Engines</h4>
+        <button class="open-all-btn" data-group="search">Open All</button>
+      </div>
+      <div class="grid" data-group="search">
+        <button class="btn" data-action="google_search">Google (site:)</button>
+        <button class="btn" data-action="bing_search">Bing (site:)</button>
+        <button class="btn" data-action="duckduckgo">DuckDuckGo (site:)</button>
+        <button class="btn" data-action="yandex">Yandex (site:)</button>
+      </div>
+    </div>
+
+    <!-- Archives -->
+    <div class="section">
+      <div class="section-header">
+        <h4>📦 Archives</h4>
+        <button class="open-all-btn" data-group="archives">Open All</button>
+      </div>
+      <div class="grid" data-group="archives">
+        <button class="btn" data-action="wayback_web">Wayback GUI</button>
+        <button class="btn" data-action="archive_full">Wayback CDX Full</button>
+        <button class="btn" data-action="archive_simple">Wayback CDX Simple</button>
+        <button class="btn" data-action="virustotal">VirusTotal</button>
+        <button class="btn" data-action="virustotal_ip">VirusTotal (IP)</button>
+        <button class="btn" data-action="urlscan">URLScan</button>
+        <button class="btn" data-action="otx_hostname">OTX Hostname</button>
+        <button class="btn" data-action="otx_domain">OTX Domain</button>
+      </div>
+    </div>
+
+    <!-- Certs & Subdomains -->
+    <div class="section">
+      <div class="section-header">
+        <h4>🔐 Certs & Enum Subdomains</h4>
+        <button class="open-all-btn" data-group="certs">Open All</button>
+      </div>
+      <div class="grid" data-group="certs">
+        <button class="btn" data-action="securitytrails">SecurityTrails</button>
+        <button class="btn" data-action="crtsh_cn">crt.sh (CN=)</button>
+        <button class="btn" data-action="crtsh_o">crt.sh (O=)</button>
+        <button class="btn" data-action="subdomainfinder">SubdomainFinder</button>
+      </div>
+    </div>
+
+    <!-- Shodan & IPs -->
+    <div class="section">
+      <div class="section-header">
+        <h4>🌐 Shodan & IPs Discovery</h4>
+        <button class="open-all-btn" data-group="shodan">Open All</button>
+      </div>
+      <div class="grid" data-group="shodan">
+        <button class="btn" data-action="shodan_ssl">Shodan (SSL)</button>
+        <button class="btn" data-action="shodan_org">Shodan (Org)</button>
+        <button class="btn" data-action="shodan_cn">Shodan (CN)</button>
+        <button class="btn" data-action="netlas_host">Netlas (Host)</button>
+        <button class="btn" data-action="netlas_subdomain">Netlas (Subdomain)</button>
+        <button class="btn" data-action="rapiddns">RapidDNS</button>
+      </div>
+    </div>
+
+    <!-- Leakix & Others -->
+    <div class="section">
+      <div class="section-header">
+        <h4>💧 Leakix & Others</h4>
+        <button class="open-all-btn" data-group="leakix">Open All</button>
+      </div>
+      <div class="grid" data-group="leakix">
+        <button class="btn" data-action="leakix_plugin">LeakIX (Plugin)</button>
+        <button class="btn" data-action="leakix_service">LeakIX (Service)</button>
+        <button class="btn" data-action="leakix_recent">LeakIX (Recent)</button>
+        <button class="btn" data-action="toolbox_dig">Google DIG</button>
+        <button class="btn" data-action="csp_evaluator">CSP Evaluator</button>
+        <button class="btn" data-action="sslshopper">SSL Checker</button>
+      </div>
+    </div>
+
+    <!-- GitHub Dorking Advanced -->
+    <div class="section">
+      <h4 style="margin: 0 0 8px 0;">🐙 GitHub Dorking (Advanced)</h4>
+      
+      <!-- Email & URL Patterns -->
+      <div class="dork-category">
+        <div class="dork-category-header">
+          <strong>📧 Email & URL Patterns</strong>
+          <button class="dork-open-all-btn" data-group="github_email">Open All</button>
+        </div>
+        <div class="dork-grid" data-group="github_email">
+          <button class="btn dork-btn" data-action="github_dork_1">Email Pattern (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_2">Email Pattern (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_3">URL Protocol (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_4">URL Protocol (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_70">Subdomain Email Pattern</button>
+          <button class="btn dork-btn" data-action="github_dork_71">Domain Email Pattern</button>
+        </div>
+      </div>
+
+      <!-- Credentials & Passwords -->
+      <div class="dork-category">
+        <div class="dork-category-header">
+          <strong>🔑 Credentials & Passwords</strong>
+          <button class="dork-open-all-btn" data-group="github_creds">Open All</button>
+        </div>
+        <div class="dork-grid" data-group="github_creds">
+          <button class="btn dork-btn" data-action="github_dork_5">URL Credentials (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_6">URL Secrets (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_7">Password Exposure (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_8">Secret Exposure (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_9">Env File Password (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_10">Password Leaks (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_11">Env File Secrets (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_12">Secret Leaks (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_13">Organization Password</button>
+          <button class="btn dork-btn" data-action="github_dork_14">Organization Secret</button>
+          <button class="btn dork-btn" data-action="github_dork_15">Organization Pass (Alt)</button>
+        </div>
+      </div>
+
+      <!-- ServiceNow -->
+      <div class="dork-category">
+        <div class="dork-category-header">
+          <strong>⚙️ ServiceNow</strong>
+          <button class="dork-open-all-btn" data-group="github_snow">Open All</button>
+        </div>
+        <div class="dork-grid" data-group="github_snow">
+          <button class="btn dork-btn" data-action="github_dork_16">ServiceNow Instance (1)</button>
+          <button class="btn dork-btn" data-action="github_dork_17">ServiceNow Instance (2)</button>
+          <button class="btn dork-btn" data-action="github_dork_18">ServiceNow Subdomain (1)</button>
+          <button class="btn dork-btn" data-action="github_dork_19">ServiceNow Subdomain (2)</button>
+          <button class="btn dork-btn" data-action="github_dork_20">ServiceNow Reverse Domain</button>
+          <button class="btn dork-btn" data-action="github_dork_21">ServiceNow Reverse (Dash)</button>
+          <button class="btn dork-btn" data-action="github_dork_39">ServiceNow Domain</button>
+          <button class="btn dork-btn" data-action="github_dork_40">ServiceNow Domain (Dash)</button>
+        </div>
+      </div>
+
+      <!-- JDBC & Database -->
+      <div class="dork-category">
+        <div class="dork-category-header">
+          <strong>🗄️ JDBC & Database</strong>
+          <button class="dork-open-all-btn" data-group="github_jdbc">Open All</button>
+        </div>
+        <div class="dork-grid" data-group="github_jdbc">
+          <button class="btn dork-btn" data-action="github_dork_22">JDBC Password (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_23">JDBC Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_24">JDBC Connection (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_25">JDBC Auth Password (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_26">JDBC Auth Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_27">JDBC @ Password (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_28">JDBC @ Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_29">JDBC @ Password Alt (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_30">JDBC @ Secret Alt (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_41">JDBC Password (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_42">JDBC Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_43">JDBC Connection (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_44">JDBC Auth Password (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_45">JDBC Auth Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_46">JDBC @ Password (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_47">JDBC @ Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_48">JDBC @ Password Alt (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_49">JDBC @ Secret Alt (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_62">MongoDB Connection</button>
+          <button class="btn dork-btn" data-action="github_dork_63">Redis Connection</button>
+          <button class="btn dork-btn" data-action="github_dork_64">Couchbase Connection</button>
+        </div>
+      </div>
+
+      <!-- CI/CD & DevOps -->
+      <div class="dork-category">
+        <div class="dork-category-header">
+          <strong>🔧 CI/CD & DevOps</strong>
+          <button class="dork-open-all-btn" data-group="github_cicd">Open All</button>
+        </div>
+        <div class="dork-grid" data-group="github_cicd">
+          <button class="btn dork-btn" data-action="github_dork_31">Jenkins Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_32">Jenkins Token (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_33">JFrog Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_34">JFrog Token (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_35">GitLab Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_36">GitLab Token (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_37">GitHub Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_38">GitHub Token (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_50">Jenkins Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_51">Jenkins Token (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_52">JFrog Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_53">JFrog Token (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_54">GitLab Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_55">GitLab Token (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_56">GitHub Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_57">GitHub Token (Domain)</button>
+        </div>
+      </div>
+
+      <!-- Enterprise Apps -->
+      <div class="dork-category">
+        <div class="dork-category-header">
+          <strong>🏢 Enterprise Apps</strong>
+          <button class="dork-open-all-btn" data-group="github_enterprise">Open All</button>
+        </div>
+        <div class="dork-grid" data-group="github_enterprise">
+          <button class="btn dork-btn" data-action="github_dork_58">Confluence Token</button>
+          <button class="btn dork-btn" data-action="github_dork_66">Confluence Domain</button>
+          <button class="btn dork-btn" data-action="github_dork_59">SAP Password (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_60">SAP Secret (Subdomain)</button>
+          <button class="btn dork-btn" data-action="github_dork_67">SAP Password (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_68">SAP Secret (Domain)</button>
+          <button class="btn dork-btn" data-action="github_dork_61">ODBC Connection</button>
+          <button class="btn dork-btn" data-action="github_dork_69">SaaS Multi (Auth0/Okta)</button>
+          <button class="btn dork-btn" data-action="github_dork_65">Google Service Keys</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="links">
+      <a class="link" href="#" id="openGithub">GitHub</a>
+      <a class="link" href="#" id="openIssues">Report Issue</a>
+      <a class="link" href="#" id="openWiki">Documentation</a>
+    </div>
+
+    <script src="libs/psl.min.js"></script>
+    <script src="shared.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
