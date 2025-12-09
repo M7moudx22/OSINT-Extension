@@ -4,7 +4,7 @@
 
 It provides:  
 ✔️ Popup GUI
-✔️ Context menu integration  
+✔️ Context menu integration
 ✔️ Automated **AlienVault OTX job runner**
 ✔️ Background tab automation with pause/resume controls
 
