@@ -15,9 +15,8 @@ It provides:
 ---
 
 <img width="873" height="711" alt="image" src="https://github.com/user-attachments/assets/b2f9d856-3885-4ddb-bd78-3f2713e559e7" />
-<img width="875" height="738" alt="image" src="https://github.com/user-attachments/assets/8f1fa7a2-3d3f-4936-82b0-260441e0d1f4" />
-<img width="866" height="735" alt="image" src="https://github.com/user-attachments/assets/304e72cb-f1cc-4c80-92b9-cb4031447095" />
-<img width="871" height="354" alt="image" src="https://github.com/user-attachments/assets/e829ec73-07e4-4973-be21-caa1f979623b" />
+<img width="896" height="748" alt="image" src="https://github.com/user-attachments/assets/3bb2ff53-5e4e-48cd-bd2a-36ab99e1e7b7" />
+<img width="886" height="739" alt="image" src="https://github.com/user-attachments/assets/b0c26c56-c9ca-4956-8be8-12975dfcfb92" />
 
 ---
 
