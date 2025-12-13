@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const keywordsStatus = document.getElementById("keywordsStatus");
   const notFiltersCheckbox = document.getElementById("notFiltersCheckbox");
   const notFiltersStatus = document.getElementById("notFiltersStatus");
+  const domainLevelSelect = document.getElementById("domainLevelSelect");
+  const domainLevelStatus = document.getElementById("domainLevelStatus");
 
   // Get current tab URL
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -18,9 +20,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Load current keywords and NOT_FILTERS setting
+  // Load current keywords, NOT_FILTERS setting, and domain level
   loadKeywordsStatus();
   loadNotFiltersStatus();
+  loadDomainLevelStatus();
 
   // Toggle keywords input visibility
   toggleInputBtn.addEventListener("click", function () {
@@ -43,6 +46,21 @@ document.addEventListener("DOMContentLoaded", function () {
         loadNotFiltersStatus();
       }
     });
+  });
+
+  // Handle domain level selection
+  domainLevelSelect.addEventListener("change", function() {
+    const level = parseInt(this.value, 10);
+    if (level >= 1 && level <= 3) {
+      chrome.runtime.sendMessage({ 
+        action: "setDomainLevel", 
+        level: level 
+      }, (response) => {
+        if (response && response.ok) {
+          loadDomainLevelStatus();
+        }
+      });
+    }
   });
 
   // Handle file upload
@@ -148,6 +166,28 @@ document.addEventListener("DOMContentLoaded", function () {
         notFiltersCheckbox.checked = response.enabled;
         notFiltersStatus.textContent = `NOT filters: ${response.enabled ? 'Enabled' : 'Disabled'}`;
         notFiltersStatus.style.color = response.enabled ? 'var(--success)' : 'var(--warning)';
+      }
+    });
+  }
+
+  function loadDomainLevelStatus() {
+    chrome.runtime.sendMessage({ action: "getDomainLevel" }, (response) => {
+      if (response && response.ok) {
+        domainLevelSelect.value = response.level;
+        let levelText = '';
+        switch(response.level) {
+          case 1:
+            levelText = '1 level (e.g., sub.example.com)';
+            break;
+          case 2:
+            levelText = '2 levels (e.g., sub.sub.example.com)';
+            break;
+          case 3:
+            levelText = '3+ levels (e.g., sub.sub.sub.example.com)';
+            break;
+        }
+        domainLevelStatus.textContent = `Domain levels: ${levelText}`;
+        domainLevelStatus.style.color = 'var(--info)';
       }
     });
   }
@@ -364,6 +404,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (msg && msg.action === "not_filters_updated") {
       loadNotFiltersStatus();
+    }
+    if (msg && msg.action === "domain_level_updated") {
+      loadDomainLevelStatus();
     }
   });
 

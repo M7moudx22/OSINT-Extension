@@ -4,9 +4,11 @@ console.log("[OSINT] Background script loaded");
 let customKeywords = [];
 // Global NOT_FILTERS toggle
 let useNotFilters = true;
+// Global domain level setting (default to 2 levels)
+let domainLevel = 2;
 
-// Load keywords and NOT_FILTERS setting from storage
-chrome.storage?.local.get(['githubKeywords', 'useNotFilters'], (result) => {
+// Load keywords, NOT_FILTERS setting, and domain level from storage
+chrome.storage?.local.get(['githubKeywords', 'useNotFilters', 'domainLevel'], (result) => {
   if (result.githubKeywords && Array.isArray(result.githubKeywords)) {
     customKeywords = result.githubKeywords;
     console.log("[OSINT] Loaded custom keywords:", customKeywords.length);
@@ -15,6 +17,11 @@ chrome.storage?.local.get(['githubKeywords', 'useNotFilters'], (result) => {
   if (typeof result.useNotFilters !== 'undefined') {
     useNotFilters = result.useNotFilters;
     console.log("[OSINT] Loaded NOT_FILTERS setting:", useNotFilters);
+  }
+  
+  if (typeof result.domainLevel !== 'undefined' && result.domainLevel >= 1 && result.domainLevel <= 3) {
+    domainLevel = result.domainLevel;
+    console.log("[OSINT] Loaded domain level setting:", domainLevel);
   }
 });
 
@@ -49,6 +56,20 @@ function getKeywordsArray() {
 // Get NOT_FILTERS based on global setting
 function getNotFilters() {
   return useNotFilters ? `NOT xxxx NOT **** NOT 123 NOT changeme NOT example NOT guest NOT localhost NOT fake NOT 1234 NOT xxx NOT 127.0.0.1 NOT test NOT tracker NOT RobotsDisallowed NOT disallowed NOT robots` : '';
+}
+
+// Get domain level pattern
+function getDomainLevelPattern() {
+  switch(domainLevel) {
+    case 1:
+      return '{1,}';
+    case 2:
+      return '{2,}';
+    case 3:
+      return '{3,}';
+    default:
+      return '{2,}';
+  }
 }
 
 // add a job tracker and starter to open OTX pages one-by-one, waiting 5s between pages.
@@ -533,6 +554,34 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
+  // Handle domain level setting
+  if (msg.action === "setDomainLevel") {
+    const level = msg.level;
+    if (level >= 1 && level <= 3) {
+      domainLevel = level;
+      // Save to storage
+      if (chrome.storage?.local) {
+        chrome.storage.local.set({ domainLevel: level }, () => {
+          console.log("[OSINT] Domain level saved:", level);
+          // Broadcast to popup
+          chrome.runtime.sendMessage({ action: "domain_level_updated", level: level });
+          sendResponse({ ok: true, level: level });
+        });
+      } else {
+        sendResponse({ ok: true, level: level });
+      }
+    } else {
+      sendResponse({ ok: false, error: "Invalid domain level" });
+    }
+    return true;
+  }
+
+  // Handle get domain level
+  if (msg.action === "getDomainLevel") {
+    sendResponse({ ok: true, level: domainLevel });
+    return true;
+  }
+
   // Handle keyword reset
   if (msg.action === "resetKeywords") {
     customKeywords = [];
@@ -568,11 +617,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     
     console.log(`[OSINT] Opening ${keywordsArray.length} tabs for ${type} with individual keywords`);
     
+    // Get domain level pattern
+    const domainPattern = getDomainLevelPattern();
+    
     // Open a tab for each keyword
     keywordsArray.forEach((keyword, index) => {
       setTimeout(() => {
         try {
-          const url = getGitHubDorkURL(type, domain, SLD, domainOnly, keyword);
+          const url = getGitHubDorkURL(type, domain, SLD, domainOnly, keyword, domainPattern);
           if (url) {
             chrome.tabs.create({ url, active: false });
           }
@@ -806,8 +858,6 @@ function openUrls(urls) {
   });
 }
 
-const NOT_FILTERS = `NOT xxxx NOT **** NOT 123 NOT changeme NOT example NOT guest NOT localhost NOT fake NOT 1234 NOT xxx NOT 127.0.0.1 NOT test NOT tracker NOT RobotsDisallowed NOT disallowed NOT robots`;
-
 function processActionInBackground(action, text) {
   const host = extractHostFromText(text);
   if (!host) {
@@ -838,6 +888,9 @@ function processActionInBackground(action, text) {
   // Get keywords array
   const keywordsArray = getKeywordsArray();
 
+  // Get domain level pattern
+  const domainPattern = getDomainLevelPattern();
+
   // List of actions that use keywords and should open multiple tabs
   const keywordDorkActions = [
     'github_dork_5', 'github_dork_6', 'github_dork_7', 'github_dork_8', 
@@ -861,7 +914,7 @@ function processActionInBackground(action, text) {
       setTimeout(() => {
         try {
           // Get the URL for this action with the specific keyword
-          const url = getURLForAction(action, host, SLD, domain, keyword);
+          const url = getURLForAction(action, host, SLD, domain, keyword, domainPattern);
           if (url) {
             chrome.tabs.create({ url, active: false });
           }
@@ -915,31 +968,31 @@ function processActionInBackground(action, text) {
     sslshopper: `https://www.sslshopper.com/ssl-checker.html#hostname=${encHost}`,
     
     // GitHub Dorks without keywords (single tab)
-    github_dork_1: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_2: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ ${getNotFilters()}`)}&type=code`,
-    github_dork_3: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ ${getNotFilters()}`)}&type=code`,
-    github_dork_4: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_1: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_2: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ ${getNotFilters()}`)}&type=code`,
+    github_dork_3: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ ${getNotFilters()}`)}&type=code`,
+    github_dork_4: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
     github_dork_10: `https://github.com/search?q=${encodeURIComponent(`/${SLD}(?:[a-zA-Z0-9-]+\\.)+service-now\\.com/`)}&type=code`,
     github_dork_11: `https://github.com/search?q=${encodeURIComponent(`/${SLD}(?:[a-zA-Z0-9-]+\\.)+servicenow\\.com/`)}&type=code`,
     github_dork_12: `https://github.com/search?q=${encodeURIComponent(`/${SLD}(?:[a-zA-Z0-9-]+\\.){2,}service-now\\.com/`)}&type=code`,
     github_dork_13: `https://github.com/search?q=${encodeURIComponent(`/${SLD}(?:[a-zA-Z0-9-]+\\.){2,}servicenow\\.com/`)}&type=code`,
-    github_dork_14: `https://github.com/search?q=${encodeURIComponent(`/servicenow\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_15: `https://github.com/search?q=${encodeURIComponent(`/service-now\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_17: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_29: `https://github.com/search?q=${encodeURIComponent(`/servicenow\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ ${getNotFilters()}`)}&type=code`,
-    github_dork_30: `https://github.com/search?q=${encodeURIComponent(`/service-now\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ ${getNotFilters()}`)}&type=code`,
-    github_dork_32: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ ${getNotFilters()}`)}&type=code`,
-    github_dork_46: `https://github.com/search?q=${encodeURIComponent(`/odbc:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_47: `https://github.com/search?q=${encodeURIComponent(`/mongodb:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_48: `https://github.com/search?q=${encodeURIComponent(`/redis:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
-    github_dork_49: `https://github.com/search?q=${encodeURIComponent(`/couchbase:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_14: `https://github.com/search?q=${encodeURIComponent(`/servicenow\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_15: `https://github.com/search?q=${encodeURIComponent(`/service-now\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_17: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_29: `https://github.com/search?q=${encodeURIComponent(`/servicenow\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ ${getNotFilters()}`)}&type=code`,
+    github_dork_30: `https://github.com/search?q=${encodeURIComponent(`/service-now\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ ${getNotFilters()}`)}&type=code`,
+    github_dork_32: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ ${getNotFilters()}`)}&type=code`,
+    github_dork_46: `https://github.com/search?q=${encodeURIComponent(`/odbc:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_47: `https://github.com/search?q=${encodeURIComponent(`/mongodb:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_48: `https://github.com/search?q=${encodeURIComponent(`/redis:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
+    github_dork_49: `https://github.com/search?q=${encodeURIComponent(`/couchbase:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ ${getNotFilters()}`)}&type=code`,
     github_dork_50: `https://github.com/search?q=${encodeURIComponent(`/gserviceaccount.com/ AND /BEGIN PRIVATE KEY/ NOT /@project.iam.gserviceaccount.com/ NOT /your-client-email-here/ NOT /your-service-account/ NOT /@yourproject/ ${getNotFilters()}`)}&type=code`,
   };
 
   // For keyword actions with no keywords, use the first default keyword
   if (keywordDorkActions.includes(action) && keywordsArray.length === 0) {
     const firstKeyword = 'password'; // Fallback
-    const url = getURLForAction(action, host, SLD, domain, firstKeyword);
+    const url = getURLForAction(action, host, SLD, domain, firstKeyword, domainPattern);
     if (url) {
       chrome.tabs.create({ url, active: false });
     }
@@ -952,59 +1005,59 @@ function processActionInBackground(action, text) {
 }
 
 // Helper function to create URL for a specific action with a specific keyword
-function getURLForAction(action, host, SLD, domain, keyword) {
+function getURLForAction(action, host, SLD, domain, keyword, domainPattern) {
   // Build fulldork pattern
   const fulldork = `[$#^]?${keyword}[[:space:]]*[:=]?[[:space:]]*['"][A-Za-z0-9_$#^\\-@._]*['"]`;
   const notFilters = getNotFilters();
   
   const urlTemplates = {
     // GitHub Dorks with keywords (will open multiple tabs)
-    github_dork_5: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_6: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_7: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ AND PATH:.env ${notFilters}`)}&type=code`,
-    github_dork_8: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_5: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_6: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_7: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ AND PATH:.env ${notFilters}`)}&type=code`,
+    github_dork_8: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
     github_dork_9: `https://github.com/search?q=${encodeURIComponent(`org:${SLD} /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_16: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_18: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_19: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_20: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_21: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_22: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_23: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_24: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_25: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_26: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_27: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_28: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_31: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_33: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_34: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_35: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_36: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_37: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_38: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_39: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_40: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_41: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_42: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_43: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_44: `https://github.com/search?q=${encodeURIComponent(`/confluence[a-zA-Z0-9-]*\\.(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_45: `https://github.com/search?q=${encodeURIComponent(`/:sap:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_51: `https://github.com/search?q=${encodeURIComponent(`/confluence[a-zA-Z0-9-]*\\.(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_52: `https://github.com/search?q=${encodeURIComponent(`/:sap:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_53: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.){2,}auth0\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_54: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.){2,}okta\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_55: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.){2,}jfrog\\.io\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_56: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.){2,}onelogin\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_57: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.){2,}looker\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
-    github_dork_58: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.){2,}jenkins\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_16: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_18: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_19: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_20: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_21: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_22: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_23: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_24: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_25: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_26: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_27: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_28: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_31: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_33: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_34: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_35: `https://github.com/search?q=${encodeURIComponent(`/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_36: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_37: `https://github.com/search?q=${encodeURIComponent(`/jenkins\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_38: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_39: `https://github.com/search?q=${encodeURIComponent(`/jfrog\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_40: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_41: `https://github.com/search?q=${encodeURIComponent(`/gitlab\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_42: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_43: `https://github.com/search?q=${encodeURIComponent(`/github\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_44: `https://github.com/search?q=${encodeURIComponent(`/confluence[a-zA-Z0-9-]*\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_45: `https://github.com/search?q=${encodeURIComponent(`/:sap:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${SLD}\\./ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_51: `https://github.com/search?q=${encodeURIComponent(`/confluence[a-zA-Z0-9-]*\\.(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_52: `https://github.com/search?q=${encodeURIComponent(`/:sap:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domain}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_53: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.)${domainPattern}auth0\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_54: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.)${domainPattern}okta\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_55: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.)${domainPattern}jfrog\\.io\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_56: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.)${domainPattern}onelogin\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_57: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.)${domainPattern}looker\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_dork_58: `https://github.com/search?q=${encodeURIComponent(`/(?:[a-zA-Z0-9-]+\\.)${domainPattern}jenkins\\.(?:[a-zA-Z0-9-]+\\.)*/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
   };
   
   return urlTemplates[action];
 }
 
 // Helper function for GitHub dork URLs from content.js
-function getGitHubDorkURL(apiType, domain, SLD, domainOnly, keyword) {
+function getGitHubDorkURL(apiType, domain, SLD, domainOnly, keyword, domainPattern) {
   // Build fulldork pattern
   const fulldork = `[$#^]?${keyword}[[:space:]]*[:=]?[[:space:]]*['"][A-Za-z0-9_$#^\\-@._]*['"]`;
   const notFilters = getNotFilters();
@@ -1016,13 +1069,13 @@ function getGitHubDorkURL(apiType, domain, SLD, domainOnly, keyword) {
   const dorkMap = {
     github_org_password: `https://github.com/search?q=org%3A${encodeURIComponent(SLD)}+%2F${encodeURIComponent(fulldork)}%2F+${encodeURIComponent(notFilters)}&type=code`,
     
-    github_regex_password: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.){2,}${domainLower}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_regex_password: `https://github.com/search?q=${encodeURIComponent(`/@(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domainLower}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
     
     github_org_secret: `https://github.com/search?q=org%3A${encodeURIComponent(SLD)}+%2F${encodeURIComponent(fulldork)}%2F+${encodeURIComponent(notFilters)}&type=code`,
     
-    github_regex_secret: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9_-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domainLower}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
+    github_regex_secret: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9_-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domainLower}/ AND /${fulldork}/ ${notFilters}`)}&type=code`,
     
-    github_regex_secret2: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9_-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domainLower}/ AND /${fulldork}/ ${notFilters}`)}&type=code`
+    github_regex_secret2: `https://github.com/search?q=${encodeURIComponent(`/[a-zA-Z0-9_-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.)${domainPattern}${domainLower}/ AND /${fulldork}/ ${notFilters}`)}&type=code`
   };
   
   return dorkMap[apiType];

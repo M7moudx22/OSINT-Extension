@@ -265,12 +265,26 @@
         font-size: 12px;
         font-weight: bold;
         resize: vertical; /* Allow vertical resize */
-        min-height: 80px; /* Increased from 60px */
+        min-height: 55px; /* Increased from 60px */
         max-height: 150px; /* Added max-height */
         box-sizing: border-box;
       }
       .keywords-input::placeholder {
         color: rgba(139, 148, 165, 0.6);
+      }
+      .keywords-input-dork {
+        width: 100%;
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(11, 18, 32, 0.8);
+        color: #e6eef8;
+        font-size: 12px;
+        font-weight: bold;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        text-align: center;
+        resize: vertical;
+        min-height: 20px;
+        box-sizing: border-box;
       }
       .toggle-input-btn {
         position: absolute;
@@ -423,7 +437,7 @@
   </div>
   
   <!-- Keywords Input -->
-  <div class="keywords-input-container collapsed" id="keywordsInputContainer">
+  <div id="keywordsInputContainer">
     <textarea 
       id="keywordsInput" 
       class="keywords-input" 
@@ -434,11 +448,17 @@
   
   <div id="keywordsStatus" class="keywords-status">Using default keywords (19)</div>
   <div id="notFiltersStatus" class="keywords-status" style="margin-top: 4px;">NOT filters: Enabled</div>
+      <label for="domainLevelSelect" id="notFiltersStatus" class="keywords-status">Domain Sub-levels:</label>
+        <select id="domainLevelSelect" class="settings-select" style="background-color: #ababab;" >
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3+</option>
+        </select>
   
   <!-- Email & Username Patterns -->
   <div class="dork-category">
-  <h4 class="keywords-status">(dork) is   /[$#^]?${keyword}[[:space:]]*[:=]?[[:space:]]*['"][A-Za-z0-9_$#^\\-@._]*['"]/</h4>
-  <br><br>
+    <h4 class="keywords-input-dork">(dork) is /[$#^]?${keyword}[[:space:]]*[:=]?[[:space:]]*['"][A-Za-z0-9_$#^\\-@._]*['"]/</h4>
+    <br>
     <div class="dork-category-header">
       <strong>📧 Email & Username Patterns</strong>
       <button class="dork-open-all-btn" data-group="github_email">Open All</button>
