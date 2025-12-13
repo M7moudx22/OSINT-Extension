@@ -14,7 +14,9 @@ It provides:
 
 ---
 
-https://github.com/user-attachments/assets/08edc1b4-44d6-4ade-8e9f-bf906564b9d6
+<img width="873" height="706" alt="image" src="https://github.com/user-attachments/assets/3c0b4668-c363-4a6f-afd9-851e9608e802" />
+<img width="873" height="737" alt="image" src="https://github.com/user-attachments/assets/9320e760-7207-43e5-ab9b-4e0529120fd3" />
+<img width="858" height="765" alt="image" src="https://github.com/user-attachments/assets/1ad22b25-c225-4b23-acef-50f478ca4745" />
 
 ---
 
