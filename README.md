@@ -32,6 +32,109 @@ It provides:
 - 🔒 **Lightweight & privacy-friendly:** No servers — everything runs locally in your browser.
 
 ---
+**interesting default keywords used for github:**
+```
+defaultKeywords = [
+        "Password",
+        "DB_PASSWORD",
+        "DB_PASS",
+        "Secret",
+        "Secret_Key",
+        "SecretKey",
+        "Client_Secret",
+        "SecretAccessKey",
+        "Secret_Access_Key",
+        "Credentials",
+        "Token",
+        "ApiToken",
+        "Api_Token",
+        "ApiKey",
+        "Api_Key",
+        "Auth_Token",
+        "AuthToken",
+        "Access_Token",
+        "AccessToken",
+      ]
+```
+---
+**interesting default dorks used for github:**
+
+🎯 High-Confidence Scoped Exposure
+```
+/[a-zA-Z0-9-]+:\/\/(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/@(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/@(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/@(?:[a-zA-Z0-9-]+\.){2,}${domain}/ AND PATH:.env
+org:${SLD}
+```
+🔑 Keyword-Style Secret Patterns
+```
+/[$#^]?${keyword}[[:space:]]*[:=]?[[:space:]]*['"][A-Za-z0-9_$#^\-@._]*['"]
+```
+🌐 Core Subdomain & URL Discovery
+```
+/@(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/@(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/[a-zA-Z0-9-]+:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/[a-zA-Z0-9-]+:\/\/(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+```
+☁️ Cloud Credentials & Secrets
+```
+/gserviceaccount.com/ AND /BEGIN PRIVATE KEY/ NOT /@project.iam.gserviceaccount.com/ NOT /your-client-email-here/ NOT /your-service-account/ NOT /@yourproject/
+```
+🔐 Identity & Auth Providers
+```
+/(?:[a-zA-Z0-9-]+\.){2,}auth0\.(?:[a-zA-Z0-9-]+\.)*/
+/(?:[a-zA-Z0-9-]+\.){2,}okta\.(?:[a-zA-Z0-9-]+\.)*/
+/(?:[a-zA-Z0-9-]+\.){2,}onelogin\.(?:[a-zA-Z0-9-]+\.)*/
+```
+🏢 Enterprise Apps (Confluence · SAP · Looker)
+```
+/confluence[a-zA-Z0-9-]*\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/confluence[a-zA-Z0-9-]*\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/:sap:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/:sap:\/\/(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/(?:[a-zA-Z0-9-]+\.){2,}looker\.(?:[a-zA-Z0-9-]+\.)*/
+```
+⚙️ CI/CD & DevOps Platforms
+```
+/jenkins\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/jfrog\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/gitlab\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/github\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/jenkins\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/jfrog\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/gitlab\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/github\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+```
+
+🗄️ Database & Backend Connection Strings
+```
+/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/jdbc:[a-zA-Z0-9-]+:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/jdbc:[a-zA-Z0-9-]+:\/\/(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@\/\/(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/jdbc:[a-zA-Z0-9-]+:[a-zA-Z0-9-]+:\@(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/odbc:[a-zA-Z0-9-]+:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/mongodb:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/redis:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/couchbase:\/\/(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+```
+🧩 ServiceNow Infrastructure
+```
+/${SLD}(?:[a-zA-Z0-9-]+\.)+service-now\.com/
+/${SLD}(?:[a-zA-Z0-9-]+\.)+servicenow\.com/
+/${SLD}(?:[a-zA-Z0-9-]+\.){2,}service-now\.com/
+/${SLD}(?:[a-zA-Z0-9-]+\.){2,}servicenow\.com/
+/servicenow\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/service-now\.(?:[a-zA-Z0-9-]+\.){2,}${SLD}\./
+/servicenow\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+/service-now\.(?:[a-zA-Z0-9-]+\.){2,}${domain}/
+```
+---
 
 ## 🛠️ Installation (Developer / Local)
 
