@@ -1,5 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
   const urlInput = document.getElementById("urlInput");
+  const keywordsInput = document.getElementById("keywordsInput");
+  const keywordsInputContainer = document.getElementById("keywordsInputContainer");
+  const toggleInputBtn = document.getElementById("toggleInputBtn");
+  const uploadKeywordsBtn = document.getElementById("uploadKeywordsBtn");
+  const keywordsFileInput = document.getElementById("keywordsFile");
+  const resetKeywordsBtn = document.getElementById("resetKeywordsBtn");
+  const keywordsStatus = document.getElementById("keywordsStatus");
 
   // Get current tab URL
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -8,6 +15,116 @@ document.addEventListener("DOMContentLoaded", function () {
       urlInput.value = url.hostname;
     }
   });
+
+  // Load current keywords
+  loadKeywordsStatus();
+
+  // Toggle keywords input visibility
+  toggleInputBtn.addEventListener("click", function () {
+    keywordsInputContainer.classList.toggle("collapsed");
+    toggleInputBtn.textContent = keywordsInputContainer.classList.contains("collapsed") ? "▼" : "▲";
+    
+    if (!keywordsInputContainer.classList.contains("collapsed")) {
+      keywordsInput.focus();
+    }
+  });
+
+  // Handle file upload
+  uploadKeywordsBtn.addEventListener("click", () => {
+    keywordsFileInput.click();
+  });
+
+  keywordsFileInput.addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      try {
+        const content = event.target.result;
+        let keywords = [];
+        
+        // Try to parse as JSON first
+        try {
+          const parsed = JSON.parse(content);
+          if (Array.isArray(parsed)) {
+            keywords = parsed;
+          } else if (typeof parsed === 'object') {
+            // If it's an object with a keywords array
+            keywords = parsed.keywords || Object.values(parsed).filter(v => typeof v === 'string');
+          }
+        } catch {
+          // If not JSON, parse as text (one per line or comma-separated)
+          keywords = content.split(/[\n,]/)
+            .map(k => k.trim())
+            .filter(k => k.length > 0);
+        }
+        
+        if (keywords.length > 0) {
+          updateKeywords(keywords);
+          keywordsFileInput.value = ''; // Reset file input
+        } else {
+          alert("No valid keywords found in file");
+        }
+      } catch (error) {
+        alert("Error reading file: " + error.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // Handle manual keywords input
+  keywordsInput.addEventListener("blur", function() {
+    const text = keywordsInput.value.trim();
+    if (text) {
+      const keywords = text.split(/[\n,]/)
+        .map(k => k.trim())
+        .filter(k => k.length > 0);
+      if (keywords.length > 0) {
+        updateKeywords(keywords);
+      }
+    }
+  });
+
+  // Handle reset keywords
+  resetKeywordsBtn.addEventListener("click", function() {
+    if (confirm("Reset to default keywords?")) {
+      chrome.runtime.sendMessage({ action: "resetKeywords" }, (response) => {
+        if (response && response.ok) {
+          keywordsInput.value = '';
+          loadKeywordsStatus();
+        }
+      });
+    }
+  });
+
+  function updateKeywords(keywords) {
+    chrome.runtime.sendMessage({ 
+      action: "uploadKeywords", 
+      keywords: keywords 
+    }, (response) => {
+      if (response && response.ok) {
+        loadKeywordsStatus();
+      } else {
+        alert("Failed to update keywords: " + (response.error || "Unknown error"));
+      }
+    });
+  }
+
+  function loadKeywordsStatus() {
+    chrome.runtime.sendMessage({ action: "getKeywords" }, (response) => {
+      if (response && response.ok) {
+        const count = response.keywords.length;
+        if (response.isCustom) {
+          keywordsStatus.textContent = `Using custom keywords (${count}) - Each will open separate tab`;
+          keywordsStatus.classList.add("custom");
+        } else {
+          keywordsStatus.textContent = `Using default keywords (${count}) - Each will open separate tab`;
+          keywordsStatus.classList.remove("custom");
+        }
+      }
+    });
+  }
 
   // Handle all action buttons
   document.querySelectorAll(".btn[data-action]").forEach((btn) => {
@@ -206,6 +323,9 @@ document.addEventListener("DOMContentLoaded", function () {
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg && msg.action === "otx_update") {
       refreshOTXJobs();
+    }
+    if (msg && msg.action === "keywords_updated") {
+      loadKeywordsStatus();
     }
   });
 

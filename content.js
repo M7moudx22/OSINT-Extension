@@ -39,20 +39,22 @@ function handleInsertFromSelection(text, useFullFilters, apiType) {
       return;
     }
 
-    // Github dorks
-    if (apiType === "github_org_password") {
-      newURL = `https://github.com/search?q=org%3A${encodeURIComponent(hostShort)}+%2F%5B%24%23%5E%5D%3Fpassword%5B%5B%3Aspace%3A%5D%5D*%5B%3A%3D%5D%3F%5B%5B%3Aspace%3A%5D%5D*%5B%27%22%5D%5Ba-zA-Z1-9-%24%23%5E%5D*%2F+NOT+xxxx+NOT+****+NOT+123+NOT+changeme+NOT+example+NOT+guest+NOT+localhost+NOT+fake+NOT+1234+NOT+xxx+NOT+127.0.0.1+NOT+test+NOT+tracker+NOT+RobotsDisallowed+NOT+disallowed+NOT+robots&type=code`;
-    } else if (apiType === "github_regex_password") {
-      const dork = `/@(?:[a-zA-Z0-9-]+\\.){2,}${domainLower}/ AND /[$#^]?password[[:space:]]*[:=]?[[:space:]]*['"][a-zA-Z1-9-$#^]*/`;
-      newURL = `https://github.com/search?q=${encodeURIComponent(dork)}&type=code`;
-    } else if (apiType === "github_org_secret") {
-      newURL = `https://github.com/search?q=org%3A${encodeURIComponent(hostShort)}+%2F%5B%24%23%5E%5D%3Fsecret%5B%5B%3Aspace%3A%5D%5D*%5B%3A%3D%5D%3F%5B%5B%3Aspace%3A%5D%5D*%5B%27%22%5D%5Ba-zA-Z1-9-%24%23%5E%5D*%2F+NOT+xxxx+NOT+****+NOT+123+NOT+changeme+NOT+example+NOT+guest+NOT+localhost+NOT+fake+NOT+1234+NOT+xxx+NOT+127.0.0.1+NOT+test+NOT+tracker+NOT+RobotsDisallowed+NOT+disallowed+NOT+robots&type=code`;
-    } else if (apiType === "github_regex_secret") {
-      const dork = `/[a-zA-Z0-9_-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domainLower}/ AND /[$#^]?password[[:space:]]*[:=]?[[:space:]]*['"][a-zA-Z1-9-$#^]*/`;
-      newURL = `https://github.com/search?q=${encodeURIComponent(dork)}&type=code`;
-    } else if (apiType === "github_regex_secret2") {
-      const dork = `/[a-zA-Z0-9_-]+:\\/\\/(?:[a-zA-Z0-9-]+\\.){2,}${domainLower}/ AND /[$#^]?secret[[:space:]]*[:=]?[[:space:]]*['"][a-zA-Z1-9-$#^]*/`;
-      newURL = `https://github.com/search?q=${encodeURIComponent(dork)}&type=code`;
+    // Github dorks - send to background for keyword processing
+    if (apiType === "github_org_password" || 
+        apiType === "github_regex_password" || 
+        apiType === "github_org_secret" || 
+        apiType === "github_regex_secret" || 
+        apiType === "github_regex_secret2") {
+      
+      chrome.runtime.sendMessage({ 
+        action: "executeKeywordDork", 
+        type: apiType, 
+        text: text,
+        domain: subdomain,
+        hostShort: hostShort,
+        domainOnly: domainOnly
+      });
+      return;
     }
 
     // Shodan: SSL, CN, Org (Ltd/Inc)
