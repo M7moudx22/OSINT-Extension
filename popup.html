@@ -96,7 +96,7 @@
         gap: 6px;
       }
       .btn {
-        padding: 6px 8px;
+        padding: 4px 8px;
         border-radius: 6px;
         border: none;
         background: rgba(79, 70, 229, 0.7);
@@ -147,8 +147,10 @@
         gap: 4px;
       }
       .dork-btn {
-        padding: 4px 6px;
+        padding: 4px 8px;
         background: rgba(79, 70, 229, 0.7);
+        font-size: 12px;
+        font-weight: bold;
       }
       .dork-category {
         margin-bottom: 10px;
@@ -190,7 +192,7 @@
       }
       /* Domain highlighting for GitHub dorks */
       .domain-highlight {
-        color: hsl(160, 84%, 39%); /* color */
+        color: hsl(63, 100%, 50%); /* color */
         font-weight: bold;
         text-shadow: 0 0 1px rgba(255, 68, 68, 0.3);
       }      
@@ -260,7 +262,8 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         background: rgba(11, 18, 32, 0.8);
         color: #e6eef8;
-        font-size: 11px;
+        font-size: 12px;
+        font-weight: bold;
         resize: vertical; /* Allow vertical resize */
         min-height: 80px; /* Increased from 60px */
         max-height: 150px; /* Added max-height */
@@ -441,8 +444,8 @@
       <button class="dork-open-all-btn" data-group="github_email">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_email">
-      <button class="btn dork-btn" data-action="github_dork_1">@user.dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_2">@user.dev.<span class="domain-highlight">example.com</span></button>
+      <button class="btn dork-btn" data-action="github_dork_1">@*.*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_2">@*.*.<span class="domain-highlight">example.com</span></button>
     </div>
   </div>
 
@@ -453,10 +456,10 @@
       <button class="dork-open-all-btn" data-group="github_url">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_url">
-      <button class="btn dork-btn" data-action="github_dork_3">https://api.dev.<span class="domain-highlight">example.com</span></button>
-      <button class="btn dork-btn" data-action="github_dork_4">https://api.dev.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_3">https://*.*.<span class="domain-highlight">example.com</span></button>
+      <button class="btn dork-btn" data-action="github_dork_4">https://*.*.<span class="domain-highlight">company.*</span></button>
       <button class="btn dork-btn" data-action="github_dork_5">URL + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_6">@<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_6">@*.<span class="domain-highlight">company.*</span> + dork</button>
     </div>
   </div>
 
@@ -467,8 +470,8 @@
       <button class="dork-open-all-btn" data-group="github_creds">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_creds">
-      <button class="btn dork-btn" data-action="github_dork_7">@<span class="domain-highlight">example.com</span> + dork +.env</button>
-      <button class="btn dork-btn" data-action="github_dork_8">@<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_7">@*.<span class="domain-highlight">example.com</span> + dork +.env</button>
+      <button class="btn dork-btn" data-action="github_dork_8">@*.<span class="domain-highlight">example.com</span> + dork</button>
     </div>
   </div>
 
@@ -490,14 +493,14 @@
       <button class="dork-open-all-btn" data-group="github_servicenow">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_servicenow">
-      <button class="btn dork-btn" data-action="github_dork_10"><span class="domain-highlight">company</span>.dev.service-now.com</button>
-      <button class="btn dork-btn" data-action="github_dork_11"><span class="domain-highlight">company</span>.dev.servicenow.com</button>
-      <button class="btn dork-btn" data-action="github_dork_12"><span class="domain-highlight">company</span>.api.dev.service-now.com</button>
-      <button class="btn dork-btn" data-action="github_dork_13"><span class="domain-highlight">company</span>.api.dev.servicenow.com</button>
-      <button class="btn dork-btn" data-action="github_dork_14">servicenow.dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_15">service-now.dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_29">servicenow.dev.<span class="domain-highlight">example.com</span></button>
-      <button class="btn dork-btn" data-action="github_dork_30">service-now.dev.<span class="domain-highlight">example.com</span></button>
+      <button class="btn dork-btn" data-action="github_dork_10"><span class="domain-highlight">company</span>.*.service-now.com</button>
+      <button class="btn dork-btn" data-action="github_dork_11"><span class="domain-highlight">company</span>.*.servicenow.com</button>
+      <button class="btn dork-btn" data-action="github_dork_12"><span class="domain-highlight">company</span>.*.*.service-now.com</button>
+      <button class="btn dork-btn" data-action="github_dork_13"><span class="domain-highlight">company</span>.*.*.servicenow.com</button>
+      <button class="btn dork-btn" data-action="github_dork_14">servicenow.*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_15">service-now.*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_29">servicenow.*.<span class="domain-highlight">example.com</span></button>
+      <button class="btn dork-btn" data-action="github_dork_30">service-now.*.<span class="domain-highlight">example.com</span></button>
     </div>
   </div>
 
@@ -508,16 +511,16 @@
       <button class="dork-open-all-btn" data-group="github_jdbc">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_jdbc">
-      <button class="btn dork-btn" data-action="github_dork_16">jdbc://mysql.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_17">jdbc:mysql:dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_18">jdbc:mysql://dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_19">jdbc:mysql:@//dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_20">jdbc:mysql:@dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_31">jdbc://mysql.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_32">jdbc:mysql:dev.<span class="domain-highlight">example.com</span></button>
-      <button class="btn dork-btn" data-action="github_dork_33">jdbc:mysql://dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_34">jdbc:mysql:@//dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_35">jdbc:mysql:@dev.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_16">jdbc://*.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_17">jdbc:*:*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_18">jdbc:*://*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_19">jdbc:*:@//*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_20">jdbc:*:@*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_31">jdbc://*.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_32">jdbc:*:*.<span class="domain-highlight">example.com</span></button>
+      <button class="btn dork-btn" data-action="github_dork_33">jdbc:*://*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_34">jdbc:*:@//*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_35">jdbc:*:@*.<span class="domain-highlight">example.com</span> + dork</button>
     </div>
   </div>
 
@@ -528,22 +531,22 @@
       <button class="dork-open-all-btn" data-group="github_cicd">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_cicd">
-      <button class="btn dork-btn" data-action="github_dork_21">jenkins.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_22">jenkins.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_23">jfrog.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_24">jfrog.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_25">gitlab.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_26">gitlab.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_27">github.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_28">github.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_36">jenkins.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_37">jenkins.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_38">jfrog.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_39">jfrog.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_40">gitlab.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_41">gitlab.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_42">github.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_43">github.dev.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_21">jenkins.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_22">jenkins.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_23">jfrog.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_24">jfrog.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_25">gitlab.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_26">gitlab.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_27">github.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_28">github.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_36">jenkins.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_37">jenkins.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_38">jfrog.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_39">jfrog.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_40">gitlab.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_41">gitlab.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_42">github.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_43">github.*.<span class="domain-highlight">example.com</span> + dork</button>
     </div>
   </div>
 
@@ -571,14 +574,14 @@
       <button class="dork-open-all-btn" data-group="github_misc">Open All</button>
     </div>
     <div class="dork-grid" data-group="github_misc">
-      <button class="btn dork-btn" data-action="github_dork_44">confluence.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_45">sap://api.dev.<span class="domain-highlight">company.*</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_46">odbc://dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_47">mongodb://dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_48">redis://dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_49">couchbase://dev.<span class="domain-highlight">company.*</span></button>
-      <button class="btn dork-btn" data-action="github_dork_51">confluence.dev.<span class="domain-highlight">example.com</span> + dork</button>
-      <button class="btn dork-btn" data-action="github_dork_52">sap://api.dev.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_44">confluence.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_45">sap://*.*.<span class="domain-highlight">company.*</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_46">odbc://*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_47">mongodb://*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_48">redis://*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_49">couchbase://*.<span class="domain-highlight">company.*</span></button>
+      <button class="btn dork-btn" data-action="github_dork_51">confluence.*.<span class="domain-highlight">example.com</span> + dork</button>
+      <button class="btn dork-btn" data-action="github_dork_52">sap://*.*.<span class="domain-highlight">example.com</span> + dork</button>
     </div>
   </div>
 
