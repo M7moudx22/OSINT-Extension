@@ -57,6 +57,8 @@ defaultKeywords = [
       ]
 ```
 ---
+**Hint: in github section when you click on (open all) group with default keywords may be will crash your browser (not recommended) 🤪
+---
 **interesting default dorks used for github:**
 
 🎯 High-Confidence Scoped Exposure
