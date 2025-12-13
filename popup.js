@@ -313,24 +313,33 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
       const jobs = resp.jobs;
-      const keys = Object.keys(jobs);
-      if (!keys.length) {
+      
+      // Filter out stopped jobs
+      const activeJobs = Object.keys(jobs).filter(k => jobs[k] && !jobs[k].stop);
+      if (!activeJobs.length) {
         otxJobsContainer.innerHTML = "<em>No active jobs</em>";
         return;
       }
+      
       otxJobsContainer.innerHTML = "";
-      keys.forEach((jobId) => {
+      activeJobs.forEach((jobId) => {
         const j = jobs[jobId];
         const div = document.createElement("div");
         div.className = "otx-job";
         const left = document.createElement("div");
-        left.textContent = `${jobId} (next:${j.nextPage})`;
+        left.textContent = ` ${jobId} (page:${j.nextPage-1}, next:${j.nextPage})`;
+        left.title = `Pages opened: ${j.pagesOpened || 0}, Next page: ${j.nextPage}`;
         const right = document.createElement("div");
         const stopBtn = document.createElement("button");
         stopBtn.textContent = "Stop";
         stopBtn.addEventListener("click", () => {
           chrome.runtime.sendMessage({ action: "otx_stop", jobId }, (r) => {
-            refreshOTXJobs();
+            // Remove the job from UI immediately
+            div.remove();
+            // If no jobs left, show "No active jobs"
+            if (otxJobsContainer.children.length === 0) {
+              otxJobsContainer.innerHTML = "<em>No active jobs</em>";
+            }
           });
         });
         right.appendChild(stopBtn);

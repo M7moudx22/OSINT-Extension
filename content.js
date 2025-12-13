@@ -230,14 +230,17 @@ window.addEventListener("load", () => {
     if (overlayState.running) {
       otxOverlay.style.background = "rgba(200,40,40,0.95)";
       otxOverlay.style.color = "#fff";
-      otxOverlay.textContent = "Stop OTX Jobs";
       otxOverlay.title = "Click to stop all running OTX jobs";
     } else {
       otxOverlay.style.background = "rgba(40,160,60,0.95)"; // green
       otxOverlay.style.color = "#fff";
-      otxOverlay.textContent = "Resume OTX Jobs";
       otxOverlay.title = "Click to resume paused OTX jobs";
     }
+    
+    // Update text with job count
+    otxOverlay.textContent = overlayState.running ? 
+      `Stop OTX Jobs (${overlayState.jobCount || 0} active)` : 
+      `Resume OTX Jobs (${overlayState.jobCount || 0} paused)`;
   }
 
   function createOverlay() {
@@ -313,13 +316,25 @@ window.addEventListener("load", () => {
     const keys = jobs && typeof jobs === "object" ? Object.keys(jobs) : [];
     if (!keys.length) {
       overlayState.exists = false;
+      overlayState.jobCount = 0;
       removeOverlay();
       return;
     }
+    
+    // Filter out stopped jobs
+    const activeJobs = keys.filter(k => jobs[k] && !jobs[k].stop);
+    if (!activeJobs.length) {
+      overlayState.exists = false;
+      overlayState.jobCount = 0;
+      removeOverlay();
+      return;
+    }
+    
     overlayState.exists = true;
+    overlayState.jobCount = activeJobs.length;
+    
     // running if any job has stop == false
-    const anyRunning = keys.some(k => !jobs[k] || !jobs[k].stop === false ? false : !jobs[k].stop) 
-      || keys.some(k => jobs[k] && !jobs[k].stop); // defensive
+    const anyRunning = activeJobs.some(k => jobs[k] && !jobs[k].stop);
     overlayState.running = anyRunning;
     createOverlay();
     updateOverlayAppearance();

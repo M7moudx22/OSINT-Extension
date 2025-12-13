@@ -51,12 +51,172 @@ function getNotFilters() {
   return useNotFilters ? `NOT xxxx NOT **** NOT 123 NOT changeme NOT example NOT guest NOT localhost NOT fake NOT 1234 NOT xxx NOT 127.0.0.1 NOT test NOT tracker NOT RobotsDisallowed NOT disallowed NOT robots` : '';
 }
 
-// Safe placeholders to avoid ReferenceError if an OTX job is triggered
-// before the real implementation is defined later in the file.
-function startOTXJob(jobType, host) {
-  console.warn("[OSINT] startOTXJob placeholder called before real implementation for", jobType, host);
-  // no-op placeholder — real function defined later will override this
+// add a job tracker and starter to open OTX pages one-by-one, waiting 5s between pages.
+// job entry: { stop: bool, nextPage: number, timerId: number, groupId: int|null, tabIds: [], pagesToOpen: number, pagesOpened: number }
+const runningOTXJobs = {}; // jobId -> jobEntry
+
+// Broadcast current OTX jobs snapshot to all content scripts (so they can show/hide overlay)
+function broadcastOTXJobs() {
+  const list = {};
+  for (const k in runningOTXJobs) {
+    const j = runningOTXJobs[k];
+    // Only include jobs that are not stopped
+    if (!j.stop) {
+      list[k] = { 
+        nextPage: j.nextPage, 
+        stop: !!j.stop, 
+        groupId: j.groupId, 
+        tabCount: j.tabIds.length,
+        pagesOpened: j.pagesOpened || 0,
+        pagesToOpen: j.pagesToOpen || 5
+      };
+    }
+  }
+  try {
+    // notify other extension contexts (popup, background listeners)
+    chrome.runtime.sendMessage({ action: "otx_update", jobs: list });
+  } catch (e) {
+    console.warn("[OSINT] broadcastOTXJobs runtime.sendMessage failed:", e);
+  }
+
+  // Also explicitly send to all tabs so content scripts in every page will remove the overlay immediately.
+  try {
+    chrome.tabs.query({}, (tabs) => {
+      if (!tabs || tabs.length === 0) return;
+      tabs.forEach(t => {
+        try {
+          chrome.tabs.sendMessage(t.id, { action: "otx_update", jobs: list }, () => {
+            // ignore errors (tab may not have content script)
+          });
+        } catch (e) {
+          // ignore per-tab send errors
+        }
+      });
+    });
+  } catch (e) {
+    console.warn("[OSINT] broadcastOTXJobs tabs.sendMessage failed:", e);
+  }
 }
+
+function stopOTXJob(jobId) {
+  const job = runningOTXJobs[jobId];
+  if (!job) return false;
+  job.stop = true;
+  if (job.timerId) {
+    clearTimeout(job.timerId);
+    job.timerId = null;
+  }
+  if (typeof job.groupId === "number" && chrome.tabGroups && chrome.tabGroups.update) {
+    try { chrome.tabGroups.update(job.groupId, { collapsed: true }); } catch (e) {}
+  }
+  console.log("[OSINT][OTX] stopped job", jobId);
+  
+  // Remove from runningOTXJobs if fully stopped
+  delete runningOTXJobs[jobId];
+  
+  // notify content scripts
+  broadcastOTXJobs();
+  return true;
+}
+
+/**
+ * Start/continue an OTX job that opens pages one-by-one, waiting 5s between pages.
+ * Opens 5 pages by default, then pauses.
+ * jobType: 'otx_hostname' | 'otx_domain'
+ * host: unencoded host
+ */
+function startOTXJob(jobType, host) {
+  const jobId = `${jobType}:${host}`;
+  
+  if (runningOTXJobs[jobId] && runningOTXJobs[jobId].timerId) {
+    clearTimeout(runningOTXJobs[jobId].timerId);
+  }
+  
+  // Initialize or reuse job
+  if (!runningOTXJobs[jobId]) {
+    runningOTXJobs[jobId] = {
+      stop: false,
+      nextPage: 1,
+      timerId: null,
+      groupId: null,
+      tabIds: [],
+      pagesToOpen: 5, // Default: open 5 pages
+      pagesOpened: 0
+    };
+  }
+  
+  const job = runningOTXJobs[jobId];
+  job.stop = false;
+  
+  // If resuming, add 5 more pages to open
+  if (job.pagesOpened > 0) {
+    job.pagesToOpen = job.pagesOpened + 5;
+  }
+
+  broadcastOTXJobs();
+
+  const encHost = encodeURIComponent(host);
+  const endpointBase = jobType === "otx_hostname"
+    ? `https://otx.alienvault.com/api/v1/indicator/hostname/${encHost}/url_list?limit=500&page=`
+    : `https://otx.alienvault.com/api/v1/indicator/domain/${encHost}/url_list?limit=500&page=`;
+
+  function openNext() {
+    if (!runningOTXJobs[jobId] || runningOTXJobs[jobId].stop) {
+      console.log(`[OSINT][OTX] job ${jobId} stopped or removed`);
+      return;
+    }
+
+    // Check if we've opened enough pages
+    if (job.pagesOpened >= job.pagesToOpen) {
+      console.log(`[OSINT][OTX] job ${jobId} reached page limit (${job.pagesToOpen})`);
+      job.stop = true;
+      broadcastOTXJobs();
+      return;
+    }
+
+    const p = job.nextPage;
+    const url = `${endpointBase}${p}`;
+    console.log(`[OSINT][OTX] Opening page ${p} for ${jobId} (${job.pagesOpened + 1}/${job.pagesToOpen})`);
+
+    try {
+      chrome.tabs.create({ url, active: false }, (tab) => {
+        if (chrome.runtime.lastError) {
+          console.error("[OSINT][OTX] tab.create error:", chrome.runtime.lastError);
+          return;
+        }
+        const tabId = tab.id;
+        job.tabIds.push(tabId);
+        job.pagesOpened++;
+
+        if (typeof job.groupId === "number") {
+          chrome.tabs.group({ groupId: job.groupId, tabIds: tabId }, () => {});
+        } else {
+          chrome.tabs.group({ tabIds: tabId }, (groupId) => {
+            if (!chrome.runtime.lastError && typeof groupId === "number") {
+              job.groupId = groupId;
+              try { chrome.tabGroups.update(groupId, { title: `OTX ${host}`, color: "blue" }); } catch (e) {}
+            }
+          });
+        }
+        broadcastOTXJobs();
+      });
+    } catch (e) {
+      console.error("[OSINT][OTX] Failed to open OTX page:", url, e);
+    }
+
+    job.nextPage = p + 1;
+
+    job.timerId = setTimeout(() => {
+      if (runningOTXJobs[jobId] && !runningOTXJobs[jobId].stop) {
+        openNext();
+      }
+    }, 5000);
+  }
+
+  openNext();
+}
+
+// alias (preserve legacy name)
 function startOtxJob(jobType, host) {
   return startOTXJob(jobType, host);
 }
@@ -479,12 +639,110 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (typeof runningOTXJobs === "object") {
         for (const k in runningOTXJobs) {
           const j = runningOTXJobs[k];
-          list[k] = { nextPage: j.nextPage, stop: !!j.stop, groupId: j.groupId, tabCount: j.tabIds.length };
+          // Only include jobs that are not stopped
+          if (!j.stop) {
+            list[k] = { 
+              nextPage: j.nextPage, 
+              stop: !!j.stop, 
+              groupId: j.groupId, 
+              tabCount: j.tabIds.length,
+              pagesOpened: j.pagesOpened || 0,
+              pagesToOpen: j.pagesToOpen || 5
+            };
+          }
         }
       }
       sendResponse && sendResponse({ ok: true, jobs: list });
     } catch (e) {
       console.error("[OSINT] otx_list handler error:", e);
+      sendResponse && sendResponse({ ok: false });
+    }
+    return;
+  }
+
+  // NEW: resume all paused OTX jobs
+  if (msg.action === "otx_resume_all") {
+    try {
+      let resumedAny = false;
+      if (typeof runningOTXJobs === "object") {
+        for (const k in runningOTXJobs) {
+          const job = runningOTXJobs[k];
+          if (job && job.stop) {
+            // Resume the job by calling startOTXJob
+            const parts = k.split(":");
+            const jobType = parts[0] || null;
+            const host = parts.slice(1).join(":") || null;
+            if (jobType && host) {
+              try {
+                // Add 5 more pages to open when resuming
+                job.pagesToOpen = (job.pagesOpened || 0) + 5;
+                job.stop = false;
+                
+                // Continue opening pages
+                const encHost = encodeURIComponent(host);
+                const endpointBase = jobType === "otx_hostname"
+                  ? `https://otx.alienvault.com/api/v1/indicator/hostname/${encHost}/url_list?limit=500&page=`
+                  : `https://otx.alienvault.com/api/v1/indicator/domain/${encHost}/url_list?limit=500&page=`;
+
+                function openNext() {
+                  if (!job || job.stop) {
+                    console.log(`[OSINT][OTX] job ${k} stopped or removed`);
+                    return;
+                  }
+
+                  // Check if we've opened enough pages
+                  if (job.pagesOpened >= job.pagesToOpen) {
+                    console.log(`[OSINT][OTX] job ${k} reached page limit (${job.pagesToOpen})`);
+                    job.stop = true;
+                    broadcastOTXJobs();
+                    return;
+                  }
+
+                  const p = job.nextPage;
+                  const url = `${endpointBase}${p}`;
+                  console.log(`[OSINT][OTX] Opening page ${p} for ${k} (${job.pagesOpened + 1}/${job.pagesToOpen})`);
+
+                  try {
+                    chrome.tabs.create({ url, active: false }, (tab) => {
+                      if (chrome.runtime.lastError) {
+                        console.error("[OSINT][OTX] tab.create error:", chrome.runtime.lastError);
+                        return;
+                      }
+                      const tabId = tab.id;
+                      job.tabIds.push(tabId);
+                      job.pagesOpened++;
+
+                      if (typeof job.groupId === "number") {
+                        chrome.tabs.group({ groupId: job.groupId, tabIds: tabId }, () => {});
+                      }
+                      broadcastOTXJobs();
+                    });
+                  } catch (e) {
+                    console.error("[OSINT][OTX] Failed to open OTX page:", url, e);
+                  }
+
+                  job.nextPage = p + 1;
+
+                  job.timerId = setTimeout(() => {
+                    if (job && !job.stop) {
+                      openNext();
+                    }
+                  }, 5000);
+                }
+
+                openNext();
+                resumedAny = true;
+              } catch (e) {
+                console.error("[OSINT] Failed to resume job", k, e);
+              }
+            }
+          }
+        }
+      }
+      if (typeof broadcastOTXJobs === "function") broadcastOTXJobs();
+      sendResponse && sendResponse({ ok: resumedAny });
+    } catch (e) {
+      console.error("[OSINT] otx_resume_all handler error:", e);
       sendResponse && sendResponse({ ok: false });
     }
     return;
@@ -549,15 +807,6 @@ function openUrls(urls) {
 }
 
 const NOT_FILTERS = `NOT xxxx NOT **** NOT 123 NOT changeme NOT example NOT guest NOT localhost NOT fake NOT 1234 NOT xxx NOT 127.0.0.1 NOT test NOT tracker NOT RobotsDisallowed NOT disallowed NOT robots`;
-
-// Safe alias for legacy callers
-function startOtxJob(jobType, host) {
-  if (typeof startOTXJob === "function") {
-    return startOTXJob(jobType, host);
-  }
-  console.warn("[OSINT] startOtxJob not defined yet; cannot start OTX job for", jobType, host);
-  return;
-}
 
 function processActionInBackground(action, text) {
   const host = extractHostFromText(text);
@@ -779,133 +1028,6 @@ function getGitHubDorkURL(apiType, domain, SLD, domainOnly, keyword) {
   return dorkMap[apiType];
 }
 
-// add a job tracker and starter to open OTX pages one-by-one, waiting 5s between pages.
-// job entry: { stop: bool, nextPage: number, timerId: number, groupId: int|null, tabIds: [] }
-const runningOTXJobs = {}; // jobId -> jobEntry
-
-// Broadcast current OTX jobs snapshot to all content scripts (so they can show/hide overlay)
-function broadcastOTXJobs() {
-  const list = {};
-  for (const k in runningOTXJobs) {
-    const j = runningOTXJobs[k];
-    list[k] = { nextPage: j.nextPage, stop: !!j.stop, groupId: j.groupId, tabCount: j.tabIds.length };
-  }
-  try {
-    // notify other extension contexts (popup, background listeners)
-    chrome.runtime.sendMessage({ action: "otx_update", jobs: list });
-  } catch (e) {
-    console.warn("[OSINT] broadcastOTXJobs runtime.sendMessage failed:", e);
-  }
-
-  // Also explicitly send to all tabs so content scripts in every page will remove the overlay immediately.
-  try {
-    chrome.tabs.query({}, (tabs) => {
-      if (!tabs || tabs.length === 0) return;
-      tabs.forEach(t => {
-        try {
-          chrome.tabs.sendMessage(t.id, { action: "otx_update", jobs: list }, () => {
-            // ignore errors (tab may not have content script)
-          });
-        } catch (e) {
-          // ignore per-tab send errors
-        }
-      });
-    });
-  } catch (e) {
-    console.warn("[OSINT] broadcastOTXJobs tabs.sendMessage failed:", e);
-  }
-}
-
-function stopOTXJob(jobId) {
-  const job = runningOTXJobs[jobId];
-  if (!job) return false;
-  job.stop = true;
-  if (job.timerId) {
-    clearTimeout(job.timerId);
-    job.timerId = null;
-  }
-  if (typeof job.groupId === "number" && chrome.tabGroups && chrome.tabGroups.update) {
-    try { chrome.tabGroups.update(job.groupId, { collapsed: true }); } catch (e) {}
-  }
-  console.log("[OSINT][OTX] stopped job", jobId);
-  // notify content scripts
-  broadcastOTXJobs();
-  return true;
-}
-
-/**
- * Start/continue an OTX job that opens pages one-by-one, waiting 5s between pages.
- * jobType: 'otx_hostname' | 'otx_domain'
- * host: unencoded host
- */
-function startOTXJob(jobType, host) {
-  const jobId = `${jobType}:${host}`;
-  if (runningOTXJobs[jobId] && runningOTXJobs[jobId].timerId) {
-    clearTimeout(runningOTXJobs[jobId].timerId);
-  }
-  runningOTXJobs[jobId] = runningOTXJobs[jobId] || { stop: false, nextPage: 1, timerId: null, groupId: null, tabIds: [] };
-  const job = runningOTXJobs[jobId];
-  job.stop = false;
-
-  // broadcast that a job exists / changed
-  broadcastOTXJobs();
-
-  const encHost = encodeURIComponent(host);
-  const endpointBase = jobType === "otx_hostname"
-    ? `https://otx.alienvault.com/api/v1/indicator/hostname/${encHost}/url_list?limit=500&page=`
-    : `https://otx.alienvault.com/api/v1/indicator/domain/${encHost}/url_list?limit=500&page=`;
-
-  function openNext() {
-    if (!runningOTXJobs[jobId] || runningOTXJobs[jobId].stop) {
-      console.log(`[OSINT][OTX] job ${jobId} stopped or removed`);
-      return;
-    }
-
-    const p = runningOTXJobs[jobId].nextPage;
-    const url = `${endpointBase}${p}`;
-    console.log(`[OSINT][OTX] Opening page ${p} for ${jobId}`);
-
-    try {
-      chrome.tabs.create({ url, active: false }, (tab) => {
-        if (chrome.runtime.lastError) {
-          console.error("[OSINT][OTX] tab.create error:", chrome.runtime.lastError);
-          return;
-        }
-        const tabId = tab.id;
-        runningOTXJobs[jobId].tabIds.push(tabId);
-
-        if (typeof runningOTXJobs[jobId].groupId === "number") {
-          chrome.tabs.group({ groupId: runningOTXJobs[jobId].groupId, tabIds: tabId }, () => {});
-        } else {
-          chrome.tabs.group({ tabIds: tabId }, (groupId) => {
-            if (!chrome.runtime.lastError && typeof groupId === "number") {
-              runningOTXJobs[jobId].groupId = groupId;
-              try { chrome.tabGroups.update(groupId, { title: `OTX ${host}`, color: "blue" }); } catch (e) {}
-            }
-          });
-        }
-        // broadcast updated job state (tab count / group)
-        broadcastOTXJobs();
-      });
-    } catch (e) {
-      console.error("[OSINT][OTX] Failed to open OTX page:", url, e);
-    }
-
-    runningOTXJobs[jobId].nextPage = p + 1;
-
-    runningOTXJobs[jobId].timerId = setTimeout(() => {
-      if (runningOTXJobs[jobId] && !runningOTXJobs[jobId].stop) openNext();
-    }, 5000);
-  }
-
-  openNext();
-}
-
-// alias (preserve legacy name)
-function startOtxJob(jobType, host) {
-  return startOTXJob(jobType, host);
-}
-
 // listener from content script reporting OTX page JSON status & other commands
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg || !msg.action) return;
@@ -919,56 +1041,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
     }
     sendResponse && sendResponse({ ok: true });
-    return;
-  }
-
-  if (msg.action === "otx_list") {
-    const list = {};
-    for (const k in runningOTXJobs) {
-      const j = runningOTXJobs[k];
-      list[k] = { nextPage: j.nextPage, stop: !!j.stop, groupId: j.groupId, tabCount: j.tabIds.length };
-    }
-    sendResponse && sendResponse({ ok: true, jobs: list });
-    return;
-  }
-
-  if (msg.action === "otx_stop") {
-    const jobId = msg.jobId;
-    const ok = stopOTXJob(jobId);
-    sendResponse && sendResponse({ ok });
-    return;
-  }
-
-  // NEW: resume all paused OTX jobs
-  if (msg.action === "otx_resume_all") {
-    try {
-      let resumedAny = false;
-      if (typeof runningOTXJobs === "object") {
-        for (const k in runningOTXJobs) {
-          const job = runningOTXJobs[k];
-          if (job && job.stop) {
-            // key format: jobType:host
-            const parts = k.split(":");
-            const jobType = parts[0] || null;
-            const host = parts.slice(1).join(":") || null;
-            if (jobType && host) {
-              try {
-                // startOTXJob will reuse existing job entry and continue from nextPage
-                startOTXJob(jobType, host);
-                resumedAny = true;
-              } catch (e) {
-                console.error("[OSINT] Failed to resume job", k, e);
-              }
-            }
-          }
-        }
-      }
-      if (typeof broadcastOTXJobs === "function") broadcastOTXJobs();
-      sendResponse && sendResponse({ ok: resumedAny });
-    } catch (e) {
-      console.error("[OSINT] otx_resume_all handler error:", e);
-      sendResponse && sendResponse({ ok: false });
-    }
     return;
   }
 });
