@@ -7,6 +7,8 @@ document.addEventListener("DOMContentLoaded", function () {
   const keywordsFileInput = document.getElementById("keywordsFile");
   const resetKeywordsBtn = document.getElementById("resetKeywordsBtn");
   const keywordsStatus = document.getElementById("keywordsStatus");
+  const notFiltersCheckbox = document.getElementById("notFiltersCheckbox");
+  const notFiltersStatus = document.getElementById("notFiltersStatus");
 
   // Get current tab URL
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -16,8 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
-  // Load current keywords
+  // Load current keywords and NOT_FILTERS setting
   loadKeywordsStatus();
+  loadNotFiltersStatus();
 
   // Toggle keywords input visibility
   toggleInputBtn.addEventListener("click", function () {
@@ -27,6 +30,19 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!keywordsInputContainer.classList.contains("collapsed")) {
       keywordsInput.focus();
     }
+  });
+
+  // Handle NOT_FILTERS checkbox
+  notFiltersCheckbox.addEventListener("change", function() {
+    const enabled = this.checked;
+    chrome.runtime.sendMessage({ 
+      action: "toggleNotFilters", 
+      enabled: enabled 
+    }, (response) => {
+      if (response && response.ok) {
+        loadNotFiltersStatus();
+      }
+    });
   });
 
   // Handle file upload
@@ -122,6 +138,16 @@ document.addEventListener("DOMContentLoaded", function () {
           keywordsStatus.textContent = `Using default keywords (${count}) - Each will open separate tab`;
           keywordsStatus.classList.remove("custom");
         }
+      }
+    });
+  }
+
+  function loadNotFiltersStatus() {
+    chrome.runtime.sendMessage({ action: "getNotFilters" }, (response) => {
+      if (response && response.ok) {
+        notFiltersCheckbox.checked = response.enabled;
+        notFiltersStatus.textContent = `NOT filters: ${response.enabled ? 'Enabled' : 'Disabled'}`;
+        notFiltersStatus.style.color = response.enabled ? 'var(--success)' : 'var(--warning)';
       }
     });
   }
@@ -326,6 +352,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (msg && msg.action === "keywords_updated") {
       loadKeywordsStatus();
+    }
+    if (msg && msg.action === "not_filters_updated") {
+      loadNotFiltersStatus();
     }
   });
 

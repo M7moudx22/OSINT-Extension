@@ -18,13 +18,13 @@ function handleInsertFromSelection(text, useFullFilters, apiType) {
   domains.forEach((subdomain) => {
     let newURL = "";
 
-    // compute hostShort for org searches (best-effort)
+    // compute SLD for org searches (best-effort)
     const parts = subdomain.split(".");
-    const hostShort = parts.length >= 2 ? parts[parts.length - 2] : parts[0];
-    const domainOnly = parts.length >= 2 ? parts.slice(-2).join(".") : parts[0];
+    const SLD = parts.length >= 2 ? parts[parts.length - 2] : parts[0];
+    const domain = parts.length >= 2 ? parts.slice(-2).join(".") : parts[0];
 
     // Github dorking patterns
-    const domainLower = (domainOnly || subdomain).toLowerCase();
+    const domainLower = (domain || subdomain).toLowerCase();
 
     if (apiType === "otx") {
       const endpoint = useFullFilters
@@ -51,8 +51,8 @@ function handleInsertFromSelection(text, useFullFilters, apiType) {
         type: apiType, 
         text: text,
         domain: subdomain,
-        hostShort: hostShort,
-        domainOnly: domainOnly
+        SLD: SLD,
+        domainOnly: domain
       });
       return;
     }
@@ -63,8 +63,8 @@ function handleInsertFromSelection(text, useFullFilters, apiType) {
     } else if (apiType === "shodan_ssl.cert.subject.cn") {
       newURL = `https://www.shodan.io/search?query=ssl.cert.subject.CN%3A%22${encodeURIComponent(subdomain)}%22`;
     } else if (apiType === "shodan_org") {
-      const orgLtd = `https://www.shodan.io/search?query=org%3A%22${encodeURIComponent(hostShort + " Ltd.")}%22`;
-      const orgInc = `https://www.shodan.io/search?query=org%3A%22${encodeURIComponent(hostShort + " Inc.")}%22`;
+      const orgLtd = `https://www.shodan.io/search?query=org%3A%22${encodeURIComponent(SLD + " Ltd.")}%22`;
+      const orgInc = `https://www.shodan.io/search?query=org%3A%22${encodeURIComponent(SLD + " Inc.")}%22`;
       chrome.runtime.sendMessage({ action: "openTabs", urls: [orgLtd, orgInc] });
       return;
     } else if (apiType === "wayback") {

@@ -189,6 +189,20 @@
       .dork-open-all-btn:active {
         transform: scale(0.95);
       }
+      /* NOT_FILTERS checkbox style */
+      .not-filters-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        color: var(--muted);
+        cursor: pointer;
+      }
+
+      .not-filters-checkbox input[type="checkbox"] {
+        margin: 0;
+        cursor: pointer;
+      }      
       /* Keywords management */
       .keywords-header {
         display: flex;
@@ -384,178 +398,183 @@
       </div>
     </div>
 
-    <!-- GitHub Dorking Advanced -->
-    <div class="section">
-      <div class="section-header">
-        <h4>🐙 GitHub Dorking (Advanced)</h4>
-        <div class="keywords-controls">
-          <button class="keywords-btn upload-btn" id="uploadKeywordsBtn">📁 Upload Keywords</button>
-          <input type="file" id="keywordsFile" class="file-input" accept=".txt,.json">
-          <button class="keywords-btn reset-btn" id="resetKeywordsBtn">Reset</button>
-        </div>
-      </div>
-      
-      <!-- Keywords Input -->
-      <div class="keywords-input-container collapsed" id="keywordsInputContainer">
-        <textarea 
-          id="keywordsInput" 
-          class="keywords-input" 
-          placeholder="Enter keywords (one per line) or paste comma-separated list. These will be used in GitHub dorks. Default keywords will be used if empty."
-        ></textarea>
-        <button class="toggle-input-btn" id="toggleInputBtn">▼</button>
-      </div>
-      
-      <div id="keywordsStatus" class="keywords-status">Using default keywords (19)</div>
-      
-      <!-- Email & Username Patterns -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>📧 Email & Username Patterns</strong>
-          <button class="dork-open-all-btn" data-group="github_email">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_email">
-          <button class="btn dork-btn" data-action="github_dork_1">Email (3+ subs to host)</button>
-          <button class="btn dork-btn" data-action="github_dork_2">Email (3+ subs to domain)</button>
-        </div>
-      </div>
-
-      <!-- URL Protocol / URL Exposure -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>🔗 URL Protocol / URL Exposure</strong>
-          <button class="dork-open-all-btn" data-group="github_url">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_url">
-          <button class="btn dork-btn" data-action="github_dork_3">URL proto (to domain)</button>
-          <button class="btn dork-btn" data-action="github_dork_4">URL proto (to host)</button>
-          <button class="btn dork-btn" data-action="github_dork_5">URL proto + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_6">Email + keywords</button>
-        </div>
-      </div>
-
-      <!-- Credentials in URLs -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>🔑 Credentials in URLs</strong>
-          <button class="dork-open-all-btn" data-group="github_creds">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_creds">
-          <button class="btn dork-btn" data-action="github_dork_7">Email + keywords + .env</button>
-          <button class="btn dork-btn" data-action="github_dork_8">Email + keywords</button>
-        </div>
-      </div>
-
-      <!-- Secrets / Tokens -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>🔐 Secrets / Tokens</strong>
-          <button class="dork-open-all-btn" data-group="github_secrets">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_secrets">
-          <button class="btn dork-btn" data-action="github_dork_9">Org search + keywords</button>
-        </div>
-      </div>
-
-      <!-- ServiceNow -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>⚙️ ServiceNow</strong>
-          <button class="dork-open-all-btn" data-group="github_servicenow">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_servicenow">
-          <button class="btn dork-btn" data-action="github_dork_10">SN host pattern 1</button>
-          <button class="btn dork-btn" data-action="github_dork_11">SN host pattern 2</button>
-          <button class="btn dork-btn" data-action="github_dork_12">SN host pattern 3</button>
-          <button class="btn dork-btn" data-action="github_dork_13">SN host pattern 4</button>
-          <button class="btn dork-btn" data-action="github_dork_14">SN reversed 1</button>
-          <button class="btn dork-btn" data-action="github_dork_15">SN reversed 2</button>
-          <button class="btn dork-btn" data-action="github_dork_29">SN to domain 1</button>
-          <button class="btn dork-btn" data-action="github_dork_30">SN to domain 2</button>
-        </div>
-      </div>
-
-      <!-- JDBC / Database Credentials -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>🗄️ JDBC / Database</strong>
-          <button class="dork-open-all-btn" data-group="github_jdbc">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_jdbc">
-          <button class="btn dork-btn" data-action="github_dork_16">JDBC URL + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_17">JDBC no protocol</button>
-          <button class="btn dork-btn" data-action="github_dork_18">JDBC proto + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_19">JDBC @// + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_20">JDBC @ + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_31">JDBC to domain + kw</button>
-          <button class="btn dork-btn" data-action="github_dork_32">JDBC no proto domain</button>
-          <button class="btn dork-btn" data-action="github_dork_33">JDBC proto domain + kw</button>
-          <button class="btn dork-btn" data-action="github_dork_34">JDBC @// domain + kw</button>
-          <button class="btn dork-btn" data-action="github_dork_35">JDBC @ domain + kw</button>
-        </div>
-      </div>
-
-      <!-- CI/CD Platforms -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>🔧 CI/CD Platforms</strong>
-          <button class="dork-open-all-btn" data-group="github_cicd">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_cicd">
-          <button class="btn dork-btn" data-action="github_dork_21">Jenkins + short kw</button>
-          <button class="btn dork-btn" data-action="github_dork_22">Jenkins + full kw</button>
-          <button class="btn dork-btn" data-action="github_dork_23">JFrog + short kw</button>
-          <button class="btn dork-btn" data-action="github_dork_24">JFrog + full kw</button>
-          <button class="btn dork-btn" data-action="github_dork_25">GitLab + short kw</button>
-          <button class="btn dork-btn" data-action="github_dork_26">GitLab + full kw</button>
-          <button class="btn dork-btn" data-action="github_dork_27">GitHub + short kw</button>
-          <button class="btn dork-btn" data-action="github_dork_28">GitHub + full kw</button>
-          <button class="btn dork-btn" data-action="github_dork_36">Jenkins domain + short</button>
-          <button class="btn dork-btn" data-action="github_dork_37">Jenkins domain + full</button>
-          <button class="btn dork-btn" data-action="github_dork_38">JFrog domain + short</button>
-          <button class="btn dork-btn" data-action="github_dork_39">JFrog domain + full</button>
-          <button class="btn dork-btn" data-action="github_dork_40">GitLab domain + short</button>
-          <button class="btn dork-btn" data-action="github_dork_41">GitLab domain + full</button>
-          <button class="btn dork-btn" data-action="github_dork_42">GitHub domain + short</button>
-          <button class="btn dork-btn" data-action="github_dork_43">GitHub domain + full</button>
-        </div>
-      </div>
-
-      <!-- Cloud & Auth Platforms -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>☁️ Cloud & Auth Platforms</strong>
-          <button class="dork-open-all-btn" data-group="github_cloud">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_cloud">
-          <button class="btn dork-btn" data-action="github_dork_50">GCP Service Accounts</button>
-          <button class="btn dork-btn" data-action="github_dork_53">Auth0 + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_54">Okta + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_55">JFrog.io + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_56">OneLogin + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_57">Looker + keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_58">Jenkins generic + kw</button>
-        </div>
-      </div>
-
-      <!-- Miscellaneous -->
-      <div class="dork-category">
-        <div class="dork-category-header">
-          <strong>📦 Miscellaneous</strong>
-          <button class="dork-open-all-btn" data-group="github_misc">Open All</button>
-        </div>
-        <div class="dork-grid" data-group="github_misc">
-          <button class="btn dork-btn" data-action="github_dork_44">Confluence + short kw</button>
-          <button class="btn dork-btn" data-action="github_dork_45">SAP + full keywords</button>
-          <button class="btn dork-btn" data-action="github_dork_46">ODBC connections</button>
-          <button class="btn dork-btn" data-action="github_dork_47">MongoDB connections</button>
-          <button class="btn dork-btn" data-action="github_dork_48">Redis connections</button>
-          <button class="btn dork-btn" data-action="github_dork_49">Couchbase connections</button>
-          <button class="btn dork-btn" data-action="github_dork_51">Confluence domain + kw</button>
-          <button class="btn dork-btn" data-action="github_dork_52">SAP to domain + kw</button>
-        </div>
-      </div>
-
+<!-- Updated GitHub Dorking Advanced section -->
+<div class="section">
+  <div class="section-header">
+    <h4>🐙 GitHub Dorking (Advanced)</h4>
+    <div class="keywords-controls">
+      <label class="not-filters-checkbox">
+        <input type="checkbox" id="notFiltersCheckbox" checked>
+        <span>Apply NOT filters</span>
+      </label>
+      <button class="keywords-btn upload-btn" id="uploadKeywordsBtn">📁 Upload Keywords</button>
+      <input type="file" id="keywordsFile" class="file-input" accept=".txt,.json">
+      <button class="keywords-btn reset-btn" id="resetKeywordsBtn">Reset</button>
     </div>
+  </div>
+  
+  <!-- Keywords Input -->
+  <div class="keywords-input-container collapsed" id="keywordsInputContainer">
+    <textarea 
+      id="keywordsInput" 
+      class="keywords-input" 
+      placeholder="Enter keywords (one per line) or paste comma-separated list. These will be used in GitHub dorks. Default keywords will be used if empty."
+    ></textarea>
+    <button class="toggle-input-btn" id="toggleInputBtn">▼</button>
+  </div>
+  
+  <div id="keywordsStatus" class="keywords-status">Using default keywords (19)</div>
+  <div id="notFiltersStatus" class="keywords-status" style="margin-top: 4px;">NOT filters: Enabled</div>
+  
+  <!-- Email & Username Patterns -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>📧 Email & Username Patterns</strong>
+      <button class="dork-open-all-btn" data-group="github_email">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_email">
+      <button class="btn dork-btn" data-action="github_dork_1">Email (3+ subs to SLD)</button>
+      <button class="btn dork-btn" data-action="github_dork_2">Email (3+ subs to domain)</button>
+    </div>
+  </div>
+
+  <!-- URL Protocol / URL Exposure -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>🔗 URL Protocol / URL Exposure</strong>
+      <button class="dork-open-all-btn" data-group="github_url">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_url">
+      <button class="btn dork-btn" data-action="github_dork_3">URL proto (to domain)</button>
+      <button class="btn dork-btn" data-action="github_dork_4">URL proto (to SLD)</button>
+      <button class="btn dork-btn" data-action="github_dork_5">URL proto + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_6">Email + keywords</button>
+    </div>
+  </div>
+
+  <!-- Credentials in URLs -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>🔑 Credentials in URLs</strong>
+      <button class="dork-open-all-btn" data-group="github_creds">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_creds">
+      <button class="btn dork-btn" data-action="github_dork_7">Email + keywords + .env</button>
+      <button class="btn dork-btn" data-action="github_dork_8">Email + keywords</button>
+    </div>
+  </div>
+
+  <!-- Secrets / Tokens -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>🔐 Secrets / Tokens</strong>
+      <button class="dork-open-all-btn" data-group="github_secrets">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_secrets">
+      <button class="btn dork-btn" data-action="github_dork_9">Org search + keywords</button>
+    </div>
+  </div>
+
+  <!-- ServiceNow -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>⚙️ ServiceNow</strong>
+      <button class="dork-open-all-btn" data-group="github_servicenow">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_servicenow">
+      <button class="btn dork-btn" data-action="github_dork_10">SN host pattern 1</button>
+      <button class="btn dork-btn" data-action="github_dork_11">SN host pattern 2</button>
+      <button class="btn dork-btn" data-action="github_dork_12">SN host pattern 3</button>
+      <button class="btn dork-btn" data-action="github_dork_13">SN host pattern 4</button>
+      <button class="btn dork-btn" data-action="github_dork_14">SN reversed 1</button>
+      <button class="btn dork-btn" data-action="github_dork_15">SN reversed 2</button>
+      <button class="btn dork-btn" data-action="github_dork_29">SN to domain 1</button>
+      <button class="btn dork-btn" data-action="github_dork_30">SN to domain 2</button>
+    </div>
+  </div>
+
+  <!-- JDBC / Database Credentials -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>🗄️ JDBC / Database</strong>
+      <button class="dork-open-all-btn" data-group="github_jdbc">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_jdbc">
+      <button class="btn dork-btn" data-action="github_dork_16">JDBC URL + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_17">JDBC no protocol</button>
+      <button class="btn dork-btn" data-action="github_dork_18">JDBC proto + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_19">JDBC @// + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_20">JDBC @ + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_31">JDBC to domain + kw</button>
+      <button class="btn dork-btn" data-action="github_dork_32">JDBC no proto domain</button>
+      <button class="btn dork-btn" data-action="github_dork_33">JDBC proto domain + kw</button>
+      <button class="btn dork-btn" data-action="github_dork_34">JDBC @// domain + kw</button>
+      <button class="btn dork-btn" data-action="github_dork_35">JDBC @ domain + kw</button>
+    </div>
+  </div>
+
+  <!-- CI/CD Platforms -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>🔧 CI/CD Platforms</strong>
+      <button class="dork-open-all-btn" data-group="github_cicd">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_cicd">
+      <button class="btn dork-btn" data-action="github_dork_21">Jenkins + short kw</button>
+      <button class="btn dork-btn" data-action="github_dork_22">Jenkins + full kw</button>
+      <button class="btn dork-btn" data-action="github_dork_23">JFrog + short kw</button>
+      <button class="btn dork-btn" data-action="github_dork_24">JFrog + full kw</button>
+      <button class="btn dork-btn" data-action="github_dork_25">GitLab + short kw</button>
+      <button class="btn dork-btn" data-action="github_dork_26">GitLab + full kw</button>
+      <button class="btn dork-btn" data-action="github_dork_27">GitHub + short kw</button>
+      <button class="btn dork-btn" data-action="github_dork_28">GitHub + full kw</button>
+      <button class="btn dork-btn" data-action="github_dork_36">Jenkins domain + short</button>
+      <button class="btn dork-btn" data-action="github_dork_37">Jenkins domain + full</button>
+      <button class="btn dork-btn" data-action="github_dork_38">JFrog domain + short</button>
+      <button class="btn dork-btn" data-action="github_dork_39">JFrog domain + full</button>
+      <button class="btn dork-btn" data-action="github_dork_40">GitLab domain + short</button>
+      <button class="btn dork-btn" data-action="github_dork_41">GitLab domain + full</button>
+      <button class="btn dork-btn" data-action="github_dork_42">GitHub domain + short</button>
+      <button class="btn dork-btn" data-action="github_dork_43">GitHub domain + full</button>
+    </div>
+  </div>
+
+  <!-- Cloud & Auth Platforms -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>☁️ Cloud & Auth Platforms</strong>
+      <button class="dork-open-all-btn" data-group="github_cloud">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_cloud">
+      <button class="btn dork-btn" data-action="github_dork_50">GCP Service Accounts</button>
+      <button class="btn dork-btn" data-action="github_dork_53">Auth0 + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_54">Okta + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_55">JFrog.io + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_56">OneLogin + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_57">Looker + keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_58">Jenkins generic + kw</button>
+    </div>
+  </div>
+
+  <!-- Miscellaneous -->
+  <div class="dork-category">
+    <div class="dork-category-header">
+      <strong>📦 Miscellaneous</strong>
+      <button class="dork-open-all-btn" data-group="github_misc">Open All</button>
+    </div>
+    <div class="dork-grid" data-group="github_misc">
+      <button class="btn dork-btn" data-action="github_dork_44">Confluence + short kw</button>
+      <button class="btn dork-btn" data-action="github_dork_45">SAP + full keywords</button>
+      <button class="btn dork-btn" data-action="github_dork_46">ODBC connections</button>
+      <button class="btn dork-btn" data-action="github_dork_47">MongoDB connections</button>
+      <button class="btn dork-btn" data-action="github_dork_48">Redis connections</button>
+      <button class="btn dork-btn" data-action="github_dork_49">Couchbase connections</button>
+      <button class="btn dork-btn" data-action="github_dork_51">Confluence domain + kw</button>
+      <button class="btn dork-btn" data-action="github_dork_52">SAP to domain + kw</button>
+    </div>
+  </div>
+
+</div>
 
     <div class="links">
       <a class="link" href="#" id="openGithub">GitHub</a>
