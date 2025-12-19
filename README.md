@@ -8,10 +8,6 @@ It provides:
 
 ✔️ Context menu integration
 
-✔️ Automated **AlienVault OTX job runner**
-
-✔️ Background tab automation with pause/resume controls
-
 ---
 
 <img width="873" height="711" alt="image" src="https://github.com/user-attachments/assets/b2f9d856-3885-4ddb-bd78-3f2713e559e7" />
@@ -206,7 +202,7 @@ The extension extracts the hostname automatically.
 - 📄 `manifest.json` — Extension manifest (MV3)  
 - 🪟 `popup.html`, `popup.js` — Popup UI  
 - 🧩 `content.js` — Domain extraction + OTX overlay  
-- 🎛️ `background.js` — Context menus + OTX automation  
+- 🎛️ `background.js` — Context menus + OTX 
 - 🖼️ `icons/*` — All icons used by the extension  
 
 ---
