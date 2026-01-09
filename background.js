@@ -1431,7 +1431,7 @@ function processActionInBackground(action, text) {
 
     // Archives
     wayback_web: `https://web.archive.org/web/*/${encHost}/*`,
-    archive_full: `https://web.archive.org/cdx/search/cdx?url=*.${encHost}&fl=original&collapse=urlkey`,
+    archive_full: `https://web.archive.org/cdx/search/cdx?url=*.${encHost}&fl=original&collapse=urlkey&filter=statuscode:200`,
     archive_simple: `https://web.archive.org/cdx/search/cdx?url=*.${encHost}&fl=original&collapse=urlkey&filter=!mimetype:warc/revisit|text/css|image/jpeg|image/jpg|image/png|image/svg.xml|image/gif|image/tiff|image/webp|image/bmp|image/vnd|image/x-icon|font/ttf|font/woff|font/woff2|font/x-woff2|font/x-woff|font/otf|audio/mpeg|audio/wav|audio/webm|audio/aac|audio/ogg|audio/wav|audio/webm|video/mp4|video/mpeg|video/webm|video/ogg|video/mp2t|video/webm|video/x-msvideo|video/x-flv|application/font-woff|application/font-woff2|application/x-font-woff|application/x-font-woff2|application/vnd.ms-fontobject|application/font-sfnt|application/vnd.android.package-archive|binary/octet-stream|application/octet-stream|application/pdf|application/x-font-ttf|application/x-font-otf|video/webm|video/3gpp|application/font-ttf|audio/mp3|audio/x-wav|image/pjpeg|audio/basic|application/font-otf`,
     virustotal: `https://www.virustotal.com/vtapi/v2/domain/report?apikey=44649223c3e852464365e9b5825962e5abc258f38f066dcdd57ad5224d35f3fb&domain=${encHost}`,
     virustotal_ip: `https://www.virustotal.com/vtapi/v2/ip-address/report?apikey=44649223c3e852464365e9b5825962e5abc258f38f066dcdd57ad5224d35f3fb&ip=${encHost}`,
